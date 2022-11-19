@@ -1,0 +1,23 @@
+.logindiv{
+    display: grid;
+    place-content: center;
+    min-height: 100vh;
+    background-image: url("https://images.unsplash.com/photo-1542435503-956c469947f6?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80");
+    background-size: cover;    
+}
+
+.logindiv > div{
+    background-color: white;
+    padding: 10px;
+    /* text-align: center; */
+    width: 320px;
+}
+
+.logindiv button{
+    cursor: pointer;
+    margin-left: 40%;
+}
+
+.logindiv h2, p ,h4{
+    text-align: center;
+}

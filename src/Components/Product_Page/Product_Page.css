@@ -1,0 +1,48 @@
+.main_prod_container{
+    margin: 10px;
+    padding: 10px;
+}
+
+.singleprod{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.prod_img1{
+    width: 170px;
+    height: 300px;
+    object-fit: cover;
+}
+
+.prod_info>p{
+    text-align: left;
+}
+
+.btn{
+    display: flex;
+    margin: auto;
+    color: white;
+    padding: 3px;
+    background-color: blue;
+    cursor: pointer;
+}
+
+.action{
+    display: flex;
+    margin: auto;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.icon_btn{
+    background-color: grey;
+    border-radius: 50%;
+    cursor: pointer;
+    margin: 7px 0px;
+}
+
+.functional_part{
+    display: flex;
+    align-items: flex-start;
+}

@@ -1,0 +1,30 @@
+.navbar{
+    display: flex;
+    padding: 3px;
+    background-color: rgb(110, 128, 9);
+    color: white;
+    position: sticky;
+    top: 0px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.brandtitle{
+    flex: 2
+}
+
+.quicklinks_big_screen{
+    display: flex;
+    justify-content: space-around;
+    flex: 4
+}
+
+.quicklinks_big_screen > p{
+    cursor: pointer;
+    transition: transform 0.5s;
+}
+
+.quicklinks_big_screen > p:hover{
+    transform: scale(1.1);
+    text-decoration: 3px underline white;
+}
