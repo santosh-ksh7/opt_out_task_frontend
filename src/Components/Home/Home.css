@@ -36,9 +36,9 @@
 .btn{
     display: flex;
     margin: auto;
-    color: white;
+    /* color: white;
     padding: 3px;
-    background-color: blue;
+    background-color: blue; */
     cursor: pointer;
 }
 

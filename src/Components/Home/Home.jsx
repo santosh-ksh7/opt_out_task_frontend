@@ -12,16 +12,35 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import { connect } from "react-redux";
 import Navbar from "../Navbar/Navbar";
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
 // Toaster notification
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { styled } from "@mui/material";
+import { dec_cart_creator, inc_cart_creator } from "../Redux/action_creator";
+
 
 
 // const base_url = "http://localhost:5000";
 const base_url = "https://opt-out-task.herokuapp.com"
 
+const MyCardContent = styled(CardContent)({
+  display: "flex",
+  flexDirection: "column"
+})
 
-function Home({loginStatus}) {
+const MyCartActions = styled(CardActions)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px"
+})
+
+
+function Home({loginStatus, inc_cart, dec_cart}) {
   const navigate = useNavigate();
   // This stores all the product to show
   const[prod2show, setProd2show] = useState([]);
@@ -38,12 +57,12 @@ function Home({loginStatus}) {
 
   useEffect(()=>{
     // fetch call to retrieve all the products available
-    fetch(`${base_url}/get-all-product`).then((data) => data.json()).then((data) => setProd2show(data));
+    fetch(`${base_url}/product/get-all-product`).then((data) => data.json()).then((data) => setProd2show(data));
     // Login status of user coming from global state mgt. store in redux
     // Only if user is logged in we check for the products in the users cart to render functionality accordingly
     if(loginStatus){
       // if logged in check for products already in users cart
-      fetch(`${base_url}/items-in-cart/${localStorage.getItem("uuid")}`).then((data) => data.json()).then((data) => {setCheck(true);setUsercart(data)});
+      fetch(`${base_url}/cart/items-in-cart/${localStorage.getItem("uuid")}`).then((data) => data.json()).then((data) => {setCheck(true);setUsercart(data)});
     }else{
       // if not logged-in skip the check
       setCheck(true)
@@ -56,7 +75,7 @@ function Home({loginStatus}) {
       {/* Only after you get all the products data the product card is mounted */}
       {prod2show[0] && check ? 
         <div className="allprod">
-          {prod2show.map((ele,index) => <ProductCard obj={ele} key={index} usercart={usercart} setOpen={setOpen} loginStatus={loginStatus} />)}
+          {prod2show.map((ele,index) => <ProductCard obj={ele} key={index} usercart={usercart} setOpen={setOpen} loginStatus={loginStatus} inc_cart={inc_cart} dec_cart={dec_cart} />)}
         </div>
         :
         "Loading products..........."
@@ -86,7 +105,7 @@ function Home({loginStatus}) {
 
 
 
-function ProductCard({obj, usercart, setOpen, loginStatus}){
+function ProductCard({obj, usercart, setOpen, loginStatus, inc_cart, dec_cart}){
 
   const navigate = useNavigate();
 
@@ -112,7 +131,7 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
 
   function addToCart(){
     // sending the data as query params to the backend necessary to perform action
-    fetch(`${base_url}/add-to-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
+    fetch(`${base_url}/cart/add-to-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
       method: "GET",
       headers: {
         "content-type" : "application/json",
@@ -128,7 +147,9 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
         toast.success(data.msg);
         setIncart(true);
         // set the qty as 1
-        setQty(qty+1)
+        setQty(qty+1);
+        // update the redux-store tracking the num of products in cart
+        inc_cart();
       }
     })
   }
@@ -136,7 +157,7 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
   function inc_dec(arg){
     if(arg==="inc"){
       // fetch call to increment count in DB side
-      fetch(`${base_url}/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=inc&qty=${qty+1}`,{
+      fetch(`${base_url}/cart/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=inc&qty=${qty+1}`,{
         method: "GET",
         headers: {
           "content-type" : "application/json",
@@ -157,7 +178,7 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
         toast.warn("You can't decrement the quantity any further. To make the qty zero remove the item from the cart")
       }else{
         // if qty is greater than 1 you can decrement it
-        fetch(`${base_url}/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=dec&qty=${qty-1}`,{
+        fetch(`${base_url}/cart/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=dec&qty=${qty-1}`,{
           method: "GET",
           headers: {
             "content-type" : "application/json",
@@ -177,7 +198,7 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
 
   function removeFromCart(){
     // fetch call to remove from cart
-    fetch(`${base_url}/remove-from-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
+    fetch(`${base_url}/cart/remove-from-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
       method: "GET",
       headers: {
         "content-type" : "application/json",
@@ -189,8 +210,10 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
         // Open dialog box asking to log-in
       }else{
         toast.success(data.msg);
-        setIncart(false)
-        setQty(0)
+        setIncart(false);
+        setQty(0);
+        // update the redux-store tracking the num of products in cart
+        dec_cart();
       }
     })
   }
@@ -201,32 +224,72 @@ function ProductCard({obj, usercart, setOpen, loginStatus}){
   }
   
   return(
-    <div title="Click to go to product specific page" className="card">
-      <img onClick={goToSpecificProduct} src={obj.img} alt={obj.brand} className="prod_img" />
-      <h5 onClick={goToSpecificProduct} className="brand">{obj.brand}</h5>
-      <p onClick={goToSpecificProduct} className="des">{obj.descripion}</p>
-      <p onClick={goToSpecificProduct} className="price">₹ {obj.price}</p>
-      {incart ? 
-        // if product in cart render the functionality accordingly
-          <div className="if_in_cart">
-            <button onClick={removeFromCart} className="btn">Remove from Cart</button>
-            <p className="action">
-              Qty:-<RemoveIcon onClick={()=>inc_dec("dec")} className="icon_btn" /> {qty} <AddIcon onClick={()=>inc_dec("inc")} className="icon_btn" />
-            </p>
-          </div>
-        :
-        // if product not in cart render the functionality accordingly
-          <button onClick={addToCart} className="btn">Add to Cart</button> 
-      }
-    </div>
+    // Custom product card using CSS
+
+    // <div title="Click to go to product specific page" className="card">
+    //   <img onClick={goToSpecificProduct} src={obj.img} alt={obj.brand} className="prod_img" />
+    //   <h5 onClick={goToSpecificProduct} className="brand">{obj.brand}</h5>
+    //   <p onClick={goToSpecificProduct} className="des">{obj.descripion}</p>
+    //   <p onClick={goToSpecificProduct} className="price">₹ {obj.price}</p>
+    //   {incart ? 
+    //     // if product in cart render the functionality accordingly
+    //       <div className="if_in_cart">
+    //         <Button variant="contained" onClick={removeFromCart} className="btn">Remove from Cart</Button>
+    //         <p className="action">
+    //           Qty:-<RemoveIcon onClick={()=>inc_dec("dec")} className="icon_btn" /> {qty} <AddIcon onClick={()=>inc_dec("inc")} className="icon_btn" />
+    //         </p>
+    //       </div>
+    //     :
+    //     // if product not in cart render the functionality accordingly
+    //       <Button variant="contained" onClick={addToCart} className="btn">Add to Cart</Button> 
+    //   }
+    // </div>
+
+    
+    // MUI product card
+    <Card title="Click to go to product specific page" sx={{ maxWidth: 170 }}>
+      <CardMedia
+        onClick={goToSpecificProduct}
+        component="img"
+        image={obj.img} 
+        alt={obj.brand}
+        height="200"
+      />
+      <MyCardContent>
+        <Typography onClick={goToSpecificProduct} sx={{textAlign: "center"}} gutterBottom variant="h6" component="div">{obj.brand}</Typography>
+        <Typography onClick={goToSpecificProduct} sx={{textAlign: "center"}} gutterBottom variant="p" >{obj.descripion}</Typography>
+        <Typography onClick={goToSpecificProduct} sx={{textAlign: "center"}} gutterBottom variant="p" >₹ {obj.price}</Typography>
+      </MyCardContent>
+      <MyCartActions>
+        {incart ? 
+          // if product in cart render the functionality accordingly
+            <div className="if_in_cart">
+              <Button variant="contained" onClick={removeFromCart} className="btn">Remove from Cart</Button>
+              <p className="action">
+                Qty:-<RemoveIcon onClick={()=>inc_dec("dec")} className="icon_btn" /> {qty} <AddIcon onClick={()=>inc_dec("inc")} className="icon_btn" />
+              </p>
+            </div>
+          :
+          // if product not in cart render the functionality accordingly
+            <Button variant="contained" onClick={addToCart} className="btn">Add to Cart</Button> 
+        }
+      </MyCartActions>
+    </Card>
   )
 }
 
 // making state avaialable to component using react-redux binding so we can acess the login status of user from our component
 const mapStateToProps = (state) => {
   return{
-    loginStatus: state.isLoggedIn
+    loginStatus: state.user_login.isLoggedIn
   }
 }
 
-export default connect(mapStateToProps, null)(Home)
+const mapDispatchToProps = (dispatch) => {
+  return{
+    inc_cart : () => dispatch(inc_cart_creator()),
+    dec_cart : () => dispatch(dec_cart_creator())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Home)

@@ -1,5 +1,11 @@
-import { applyMiddleware, createStore } from "redux"
+import { applyMiddleware, combineReducers, createStore } from "redux"
 import logger from "redux-logger";
-import {login_reducer} from "./reducer"
+import {cart_reducer, login_reducer} from "./reducer"
 
-export const store = createStore(login_reducer, applyMiddleware(logger));
+
+const root_reducer = combineReducers({
+    user_login : login_reducer,
+    user_cart : cart_reducer
+})
+
+export const store = createStore(root_reducer, applyMiddleware(logger));

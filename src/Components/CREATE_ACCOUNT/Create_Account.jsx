@@ -13,6 +13,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Button from '@mui/material/Button';
 
 
 // const base_url = "http://localhost:5000";
@@ -36,7 +37,7 @@ export default function Createaccount() {
       validationSchema: createaccschema,
       onSubmit: (values) => {
         // fetch call to register the user & then alert the mesaage from response accordingly & navigate
-        fetch(`${base_url}/register`, {
+        fetch(`${base_url}/user/register`, {
           method: "POST",
           body: JSON.stringify(values),
           headers: {
@@ -148,7 +149,7 @@ export default function Createaccount() {
                     type={showpwd ? "text" : "password"}
                     variant="standard"
                 />
-                <button style={{marginTop: "10px", marginLeft: "32%"}} type="submit">Create Account</button>
+                <Button variant="contained" style={{marginTop: "10px", marginLeft: "32%"}} type="submit">Create Account</Button>
             </form>
             <p style={{textAlign: "center"}}>
                 <Link style={{fontSize: "15px", textDecoration: "none"}} to="/login">Back to Sign-in</Link>

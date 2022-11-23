@@ -13,12 +13,13 @@ import { connect } from "react-redux";
 import Navbar from "../Navbar/Navbar";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { dec_cart_creator, inc_cart_creator } from "../Redux/action_creator";
 
 
 // const base_url = "http://localhost:5000";
 const base_url = "https://opt-out-task.herokuapp.com"
 
-function ProductPage({loginStatus}){
+function ProductPage({loginStatus, inc_cart, dec_cart}){
     const navigate = useNavigate();
     // Get the product id to get product details from the URL 
     const{id} = useParams();
@@ -38,12 +39,12 @@ function ProductPage({loginStatus}){
     // Get the product Data when the component first mounts
     useEffect(() => {
         // fetch call to get the product info & store the info
-        fetch(`${base_url}/get-single-product/${id}`).then((data) => data.json()).then((data) => setProdinfo(data))
+        fetch(`${base_url}/product/get-single-product/${id}`).then((data) => data.json()).then((data) => setProdinfo(data))
         // Login status of user coming from global state mgt. store in redux
         // Only if user is logged in we check for the products in the users cart to render functionality accordingly
         if(loginStatus){
             // check if product already exists in user cart.
-            fetch(`${base_url}/check-product-in-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${id}`).then((data) => data.json()).then((data) => {
+            fetch(`${base_url}/cart/check-product-in-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${id}`).then((data) => data.json()).then((data) => {
                 if(data.msg){
                     // if product already in user cart get the quantity details
                     setCheckcart(true);
@@ -63,7 +64,7 @@ function ProductPage({loginStatus}){
           <div className="main_prod_container">
               {/* Only after getting the product data mount the ProductDisplay component */}
               {prodinfo ?
-                  <ProductDisplay obj={prodinfo} checkcart={checkcart} qty={qty} setCheckcart={setCheckcart} setQty={setQty} setOpen={setOpen} />
+                  <ProductDisplay obj={prodinfo} checkcart={checkcart} qty={qty} setCheckcart={setCheckcart} setQty={setQty} setOpen={setOpen} inc_cart={inc_cart} dec_cart={dec_cart} />
                   :
                   "Loading product info......"
               }
@@ -92,11 +93,11 @@ function ProductPage({loginStatus}){
 }
 
 
-function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
+function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen, inc_cart, dec_cart}){
 
     function addToCart(){
         // sending the data as query params to the backend necessary to perform action
-        fetch(`${base_url}/add-to-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
+        fetch(`${base_url}/cart/add-to-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
           method: "GET",
           headers: {
             "content-type" : "application/json",
@@ -112,7 +113,9 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
             toast.success(data.msg)
             setCheckcart(true);
             // set the qty as 1 when product is initially added to the cart
-            setQty(qty+1)
+            setQty(qty+1);
+            // update the redux store tracking the number of products in cart
+            inc_cart();
           }
         })
       }
@@ -120,7 +123,7 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
       function inc_dec(arg){
         if(arg==="inc"){
           // fetch call to increment count in DB side
-          fetch(`${base_url}/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=inc&qty=${qty+1}`,{
+          fetch(`${base_url}/cart/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=inc&qty=${qty+1}`,{
             method: "GET",
             headers: {
               "content-type" : "application/json",
@@ -141,7 +144,7 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
             toast.warn("You can't decrement the quantity any further. To make the qty zero remove the item from the cart")
           }else{
             // if quantity is more than 1 you can decrement it
-            fetch(`${base_url}/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=dec&qty=${qty-1}`,{
+            fetch(`${base_url}/cart/inc-dec-qty?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}&action=dec&qty=${qty-1}`,{
               method: "GET",
               headers: {
                 "content-type" : "application/json",
@@ -161,7 +164,7 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
     
       function removeFromCart(){
         // fetch call to remove from cart
-        fetch(`${base_url}/remove-from-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
+        fetch(`${base_url}/cart/remove-from-cart?u_id=${localStorage.getItem("uuid")}&prod_id=${obj._id}`, {
           method: "GET",
           headers: {
             "content-type" : "application/json",
@@ -175,6 +178,8 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
             toast.success(data.msg)
             setCheckcart(false)
             setQty(0)
+            // update the redux store tracking the number of products in user cart
+            dec_cart()
           }
         })
       }
@@ -191,14 +196,14 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
                 {checkcart ? 
                     // if product in user cart show them appropriate action
                     <div className="if_in_cart">
-                        <button onClick={removeFromCart} className="btn">Remove from Cart</button>
+                        <Button variant="contained" onClick={removeFromCart} className="btn">Remove from Cart</Button>
                         <p className="action">
                         Qty:-<RemoveIcon onClick={()=>inc_dec("dec")} className="icon_btn" /> {qty} <AddIcon onClick={()=>inc_dec("inc")} className="icon_btn" />
                         </p>
                     </div>
                     :
                     // if product is not in user cart show then appropriate action
-                    <button onClick={addToCart} className="btn">Add to Cart</button> 
+                    <Button variant="contained" onClick={addToCart} className="btn">Add to Cart</Button> 
                 }
                 </div>
             </div>
@@ -210,8 +215,15 @@ function ProductDisplay({obj, checkcart, qty, setCheckcart, setQty, setOpen}){
 // making state avaialable to component using react-redux binding so we can acess the login status of user from our component
 const mapStateToProps = (state) => {
   return{
-    loginStatus: state.isLoggedIn
+    loginStatus: state.user_login.isLoggedIn
   }
 }
 
-export default connect(mapStateToProps, null)(ProductPage)
+const mapDispatchToProps = (dispatch) => {
+  return{
+    inc_cart : () => dispatch(inc_cart_creator()),
+    dec_cart : () => dispatch(dec_cart_creator())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ProductPage)

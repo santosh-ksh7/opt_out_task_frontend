@@ -7,6 +7,7 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import KeyIcon from '@mui/icons-material/Key';
+import Button from '@mui/material/Button';
 import { useState } from "react";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -15,7 +16,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // Redux logic
 import { connect } from "react-redux";
-import { login_creator, logout_creator } from "../Redux/action_creator";
+import { login_creator, logout_creator, set_cart_creator } from "../Redux/action_creator";
 
 
 // const base_url = "http://localhost:5000";
@@ -23,7 +24,7 @@ const base_url = "https://opt-out-task.herokuapp.com"
 
 
 
-function Login({login_action, logout_action}) {
+function Login({login_action, logout_action, set_cart_value_action}) {
     const navigate = useNavigate();
 
     const[showpwd, setShowpwd] = useState(false)
@@ -38,7 +39,7 @@ function Login({login_action, logout_action}) {
       validationSchema: loginschema,
       onSubmit: (values) => {
         // fetch call to login & laert the desired message & also navigate
-        fetch(`${base_url}/login`, {
+        fetch(`${base_url}/user/login`, {
           method: "POST",
           body: JSON.stringify(values),
           headers: {
@@ -51,6 +52,8 @@ function Login({login_action, logout_action}) {
             localStorage.setItem("uuid", data.uuid)
             // Take care of redux state mgt. for login as true
             login_action();
+            // update the redux stoe for products in user cart
+            set_cart_value_action(data.cart_count);
             // Navigate to landing page
             navigate("/")
           }else{
@@ -113,7 +116,7 @@ function Login({login_action, logout_action}) {
                     type={showpwd ? "text" : "password"}
                     variant="standard"
                 />
-                <button style={{marginTop: "10px"}} type="submit">Sign-in</button>
+                <Button variant="contained" style={{marginTop: "10px"}} type="submit">Sign-in</Button>
             </form>
             <p style={{color: "grey"}}>----------or---------</p>
             <Link style={{marginLeft: "15%", fontSize: "15px", textDecoration: "none"}} to="/register">New to e-commerce? Create Account</Link>
@@ -128,7 +131,8 @@ function Login({login_action, logout_action}) {
 const mapDispatchToProps = (dispatch) => {
   return{
     login_action : () => dispatch(login_creator()),
-    logout_action : () => dispatch(logout_creator())
+    logout_action : () => dispatch(logout_creator()),
+    set_cart_value_action : (data) => dispatch(set_cart_creator(data))
   }
 }
 
